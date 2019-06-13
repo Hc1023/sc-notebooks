@@ -1,0 +1,85 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 12.0' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[      2695,         77]
+NotebookOptionsPosition[      2214,         62]
+NotebookOutlinePosition[      2560,         77]
+CellTagsIndexPosition[      2517,         74]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"Clear", "[", "\"\<Global`*\>\"", "]"}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"SetDirectory", "[", 
+   RowBox[{"NotebookDirectory", "[", "]"}], "]"}], ";"}]}], "Input",
+ CellChangeTimes->{{3.768042575792952*^9, 3.768042592663097*^9}},
+ CellLabel->"In[1]:=",ExpressionUUID->"ee24df5f-e2f6-4b9c-bc8b-2dd21032a4fb"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"distanceCsv", "=", 
+   RowBox[{"Import", "[", "\"\<data/mock-mash/dist.csv\>\"", "]"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"distanceMat", "=", 
+   RowBox[{"distanceCsv", "\[LeftDoubleBracket]", 
+    RowBox[{"2", ";;"}], "\[RightDoubleBracket]"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"cellNames", "=", 
+   RowBox[{"ToString", "/@", 
+    RowBox[{
+    "distanceCsv", "\[LeftDoubleBracket]", "1", "\[RightDoubleBracket]"}]}]}],
+   ";"}], "\[IndentingNewLine]", 
+ RowBox[{"species", "=", 
+  RowBox[{"Import", "[", "\"\<data/species.tsv\>\"", "]"}]}]}], "Input",
+ CellChangeTimes->{{3.768042660009165*^9, 3.768042696361246*^9}, {
+  3.76804272991932*^9, 3.76804276921163*^9}, {3.7680437587913847`*^9, 
+  3.7680437748634977`*^9}, {3.7694243181881237`*^9, 
+  3.769424329334964*^9}},ExpressionUUID->"a68978c3-6d16-4802-ba19-\
+4cc9d91eb607"],
+
+Cell[BoxData[""], "Input",
+ CellChangeTimes->{{3.768043678125641*^9, 3.7680436986404543`*^9}, {
+   3.768043781676663*^9, 3.768043789475095*^9}, {3.7680438951551447`*^9, 
+   3.768043927953763*^9}, {3.768047546659657*^9, 3.768047582119068*^9}, {
+   3.768048375783203*^9, 3.768048413762087*^9}, 
+   3.769424315332551*^9},ExpressionUUID->"ac2bcdc9-b4a9-4d46-af66-\
+70fdc5b3fde8"]
+},
+WindowSize->{889, 911},
+WindowMargins->{{Automatic, 387}, {Automatic, 78}},
+FrontEndVersion->"12.0 for Linux x86 (64-bit) (2019\:5e744\:67088\:65e5)",
+StyleDefinitions->"Default.nb"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[558, 20, 364, 8, 57, "Input",ExpressionUUID->"ee24df5f-e2f6-4b9c-bc8b-2dd21032a4fb"],
+Cell[925, 30, 907, 22, 101, "Input",ExpressionUUID->"a68978c3-6d16-4802-ba19-4cc9d91eb607"],
+Cell[1835, 54, 375, 6, 31, "Input",ExpressionUUID->"ac2bcdc9-b4a9-4d46-af66-70fdc5b3fde8"]
+}
+]
+*)
+
