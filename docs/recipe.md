@@ -44,17 +44,17 @@ You need to look into the scripts and modify the corresponding lines accordingly
 
 ### Computing signatures
 
-
+The sequence comparing tool, Sourmash, is based on MinHash algorithm, which is originally used for comparing the similarity of two sets. The feature vectors extracted from the sequences, i.e. signatures, are then used for computing the similarity of query sequences. The computation of signatures and evaluation of the similarities of the signatures are faster than alignment-based comparison by orders of magnitude. 
 
 ### Pre-division
 
-The motivation of the pre-division is to make mash comparison feasible for large number of cells. 
+The motivation of the pre-division is to make mash comparison feasible for large number of cells. Sourmash’s mash distance comparison requires intensive RAM usage, making 20k signatures impossible to compare all at once. Intentionally 
 
 ```
 $ bash dividing.sh
 ```
 
-The command line above will generate lists of cell numbers and write the files to the directory `divisions`. The default division size is 4000. This can be modified in the script,
+The command line above will generate lists of cell numbers and write the files containing lists of cells to the directory `divisions`. The default division size is 4000. This can be modified in the script,
 
 ```
 DIVISION_SIZE=4000
