@@ -1,18 +1,20 @@
-# Genome recovery from single-cell sequencing data
+# Method details
 
-High-quality genome recovery is an important task in genomics applied to microbiomes. Such a task applied to metagenomics sequencing data, aka binning, is already widely practiced, while genome recovery from single-cell sequencing data remains under-developed.
+## Method overview
 
-We here introduce an effective computational pipeline for recovering genomes from single-cell sequencing data in large scale, with detailed descriptions to the scripts we are using. The document serves as a readme/recipe to reproduce our method.
+Our method recovers genomes from large-scale single-cell sequencing data of gut microbiome samples. All the data, dependent computational tools and source code for our method are publicly available.
 
-The very fundamental idea of our pipeline is to co-assemble the cells that are likely to be the same species, and thus genomes of the species are supposed to be recovered. Each single-cell sequencing file reveals limited completeness of the cell’s information. Empirically, a high-quality genome assembly requires sequencing data of at least 20 cells of the same species.
+We proposed a new data analysis pipeline and applied it to 21,914 single-cells’ sequencing data, with a total of 89 high-quality (> 90% completeness, < 5% contamination) genome assemblies recovered, among which 41 known species and 9 unknown species were found. Our method requires little prior knowledge of the community to work, and features the potential ability to detailed studies of the microbial communities at the cell level.
+
+> Note: The numbers mentioned above need update accordingly.
+
+The very fundamental idea of our computational pipeline is to co-assemble the sequencing data of the cells that are likely to be the same species, and thus genomes of the species are supposed to be recovered. The co-assembly is necessary, since each single-cell sequencing file reveals limited completeness of the cell’s information. Empirically, a high-quality genome assembly requires sequencing data of at least 20 cells from the same species.
 
 Our method can be roughly divided into three stages. a) Iterative comparing and aggregating, which tries to gather the cells of the same species to the same group. Each iteration is done by sequence comparisons of cells or groups of cells, with the help of Sourmash, an implementation of the MinHash similarity comparing algorithm. The cell or cell groups with similarities to an extent will be gathered using cluster analysis techniques. And later co-assembled to get draft genome assemblies for quality check. b) Splitting the contaminated cell groups and merging the groups representing identical species, which could fix the false positives and the false negatives respectively introduced in former stage. c) Final co-assembly and clean up, which finalize the whole process returning the genomes we recovered from the input sequencing data.
 
-> Data and intermediate files are located at `/scratch/users/yehang/nsc-full`. The description below uses relative paths to this directory.
+## The genomes were recovered from sequencing data of 20k single cells
 
-## Data specification
-
-All the raw sequencing data is located in `raw`. Our data, acquired by NextSeq and NovaSeq technology, concerns both paired-end and single-end reads. The naming convention follows a very simple rule,
+Our data, acquired by NextSeq and NovaSeq technology, concerns both paired-end and single-end reads. The naming convention follows a very simple rule,
 
 ```
 <CELL NAME>_<1|2|S>.fastq
