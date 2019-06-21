@@ -44,48 +44,38 @@ The computational tools we used in our pipeline are all publicly accessible. The
 
 > Numbering the table
 
-| Environment name     | Function                           | Citation               | URL                                                   |
-| -------------------- | ---------------------------------- | ---------------------- | ----------------------------------------------------- |
-| Bowtie2 v2.2.6       | Alignment tool                     | Langmead et al., 2012  | http://bowtie-bio.sourceforge.net/bowtie2/index.shtml |
-| CheckM v1.0.13       | Genome assembly quality check      | Parks et al., 2015     | https://github.com/Ecogenomics/CheckM                 |
-| FastANI v1.1         | Alignment-free sequence comparison | Jain et al., 2018      | https://github.com/ParBliSS/FastANI                   |
-| scikit-learn v0.20.3 | Machine learning toolkit           | Pedregosa et al,. 2011 | https://scikit-learn.org                              |
-| Sourmash v2.0.0      | Alignment-free sequence comparison | Brown et al,. 2016     | https://github.com/dib-lab/sourmash                   |
-| SPAdes v3.13.0       | Assembler                          | Bankevich et al,. 2012 | https://github.com/ablab/spades                       |
+| Environment name | Function                           | Citation               | URL                                                   |
+| ---------------- | ---------------------------------- | ---------------------- | ----------------------------------------------------- |
+| Bowtie2 v2.2.6   | Alignment tool                     | Langmead et al., 2012  | http://bowtie-bio.sourceforge.net/bowtie2/index.shtml |
+| CheckM v1.0.13   | Genome assembly quality check      | Parks et al., 2015     | https://github.com/Ecogenomics/CheckM                 |
+| FastANI v1.1     | Alignment-free sequence comparison | Jain et al., 2018      | https://github.com/ParBliSS/FastANI                   |
+| SciPy v1.2.1     | Data science library               | Jones et al,. 2001     | https://www.scipy.org/                                |
+| Sourmash v2.0.0  | Alignment-free sequence comparison | Brown et al,. 2016     | https://github.com/dib-lab/sourmash                   |
+| SPAdes v3.13.0   | Assembler                          | Bankevich et al,. 2012 | https://github.com/ablab/spades                       |
 
 ## Iterative comparing and aggregating
 
-The very first iterative stage gather the cells that are potentially from the same species. Sourmash signatures of reads or contigs are helpful features for evaluating similarities of sequences. The cells are gathered in a bottom-up manner using hierarchical clustering technique, with the comparing subjects being combinations of the prior results in the last iteration. This comparing and clustering is repeated, i.e. iterated.
+The very first iterative stage gather the cells that are potentially from the same species. Sourmash signatures of reads or contigs are helpful features for evaluating similarities of sequences. The cells are gathered in a bottom-up manner using the hierarchical clustering technique, with the comparing subjects being combinations of the prior results in the last iteration. This comparing and clustering is repeated, i.e. iterated.
 
-A pre-division is performed to the dataset before the cells’ pairwise comparison, because comparing 22k cells pairwisely with Sourmash is infeasible with the limited RAM resources. A pairwise comparison of cells, as well as the later hierarchical clustering, takes *O*(*n*<sup>2</sup>) complexity, spatial and temporal. To allow the first few pairwise comparison to happen, we divided the 22k cells into 6 divisions by lexicographical order of their identifiers (that is also by random, the cell identifiers are concatenations of sample identifiers and the cells’ bar codes). Each of the divisions has at most 4,000 cells, and the cells’ pairwise comparisons starts within each division.
+**A pre-division is performed to the dataset before the cells’ pairwise comparison**, because comparing 22k cells pairwisely with Sourmash is infeasible with the limited RAM resources. A pairwise comparison of cells, as well as the later hierarchical clustering, takes *O*(*n*<sup>2</sup>) complexity, spatial and temporal. To allow the first few pairwise comparisons to happen, we divided the 22k cells into 6 divisions by lexicographical order of their identifiers (that is also by random, the cell identifiers are concatenations of sample identifiers and the cells’ bar codes). Each of the divisions has at most 4,000 cells, and the cells’ pairwise comparisons starts within each division.
 
-**Computing signatures extracts features for comparison.** The sequence comparing tool, Sourmash, is an implementation of the adapted MinHash algorithm, which is a *k*-mer based method used for comparing the similarity of two sets. The feature vectors extracted from the sequences, i.e. signatures, are later used for computing the similarities of the query sequences. The computation of signatures and evaluation of the similarities of the signatures are faster than alignment-based comparison by orders of magnitude. 
+**Computing signatures extracts features for comparison.** The sequence comparing tool, Sourmash, is an implementation of the adapted MinHash algorithm, which is a *k*-mer based method used for comparing the similarity of two sets. The feature vectors extracted from the sequences, i.e. signatures, are later used for computing the similarities of the query sequences. The computation of signatures and evaluation of the similarities of the signatures are faster than alignment-based comparison by orders of magnitude. In our analysis, we are using the default *k*-mer length (`-k 21,31,51`), resolution (`--scaled 1000`) and number of hashes (`-n 1000`). The abundance information is saved (`--track-abundance`). Hashes for 51-mers are used for later comparisons. 
 
-### Pre-division
+**Each comparison gives a distance matrix, which is used for clustering.** The entries of the matrix are Jaccard index values representing the similarity of two query sequences. With the distance matrix, the similar cells or cell groups can be gathered with the hierarchical clustering technique. The hierarchical clustering algorithm returns a dendrogram of the input subjects, and clusters can be found by splitting the dendrogram under certain criterion and flatten the subtrees to sublists of the subjects. 
 
-The motivation of the pre-division is to make mash comparison feasible for large number of cells. Sourmash’s mash distance comparison requires intensive RAM usage, making 20k signatures impossible to compare all at once. Intentionally 
+**5% similarity under Jaccard index is used for determining clusters.** The choice of this cutoff value is justified using the mock community data, as few of the pairwise distances of cells from different species have a similarity of more than 5%, when comparing to the cells from the same species, as shown in the figure.
 
-```
-$ bash dividing.sh
-```
+> Supplementary figure needed
+>
+> Data source: https://github.com/celestialphineas/sc-notebooks/tree/master/data/mock-mash
+>
+> `dist.csv.gz` is the distance matrix of the cells’ raw reads in `.csv` format.
+>
+> `species.tsv` is a list of the cell id’s and their corresponding species.
+>
+> Note that when plotting the histogram for pairwise distances of the cells,
 
-The command line above will generate lists of cell numbers and write the files containing lists of cells to the directory `divisions`. The default division size is 4000. This can be modified in the script,
-
-```
-DIVISION_SIZE=4000
-```
-
-Output files of the script have the extension `.tsv`. Within each file, every single line is the name for the cell’s sequencing data. An example is given below,
-
-```
-1000000
-1000010
-1000013
-1000020
-...
-```
-
-### Computing Mash signatures
+### PComputing Mash signatures
 
 Mash signatures can be used as a feature for fast comparison between sequencing data files.
 
