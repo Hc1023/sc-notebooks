@@ -61,36 +61,27 @@ The very first iterative stage gather the cells that are potentially from the sa
 
 **Computing signatures extracts features for comparison.** The sequence comparing tool, Sourmash, is an implementation of the adapted MinHash algorithm, which is a *k*-mer based method used for comparing the similarity of two sets. The feature vectors extracted from the sequences, i.e. signatures, are later used for computing the similarities of the query sequences. The computation of signatures and evaluation of the similarities of the signatures are faster than alignment-based comparison by orders of magnitude. In our analysis, we are using the default *k*-mer length (`-k 21,31,51`), resolution (`--scaled 1000`) and number of hashes (`-n 1000`). The abundance information is saved (`--track-abundance`). Hashes for 51-mers are used for later comparisons. 
 
-**Each comparison gives a distance matrix, which is used for clustering.** The entries of the matrix are Jaccard index values representing the similarity of two query sequences. With the distance matrix, the similar cells or cell groups can be gathered with the hierarchical clustering technique. The hierarchical clustering algorithm returns a dendrogram of the input subjects, and clusters can be found by splitting the dendrogram under certain criterion and flatten the subtrees to sublists of the subjects. 
+**Each comparison gives a distance matrix, which is used for clustering.** The entries of the matrix are Jaccard index values representing the similarity of two query sequences. With the distance matrix, the similar cells (the first iteration) or cell groups (the else) can be gathered with the hierarchical clustering technique. The hierarchical clustering algorithm returns a dendrogram of the input subjects, and clusters can be formed by splitting the dendrogram under certain criterion and flatten the subtrees to sublists of the subjects. 
 
-**5% similarity under Jaccard index is used for determining clusters.** The choice of this cutoff value is justified using the mock community data, as few of the pairwise distances of cells from different species have a similarity of more than 5%, when comparing to the cells from the same species, as shown in the figure.
+**5% similarity under Jaccard index is used for determining clusters.** The choice of this cutoff value can be justified by the mock data, as few of the pairwise distances of cells from different species have a similarity of more than 5%, when comparing to the cells from the same species, as shown in the figure. The hierarchical clustering is using complete linkage method (`method='complete'`) and splitting by the 0.95 distance criterion (`0.95, criterion='distance'`. The distance is the dissimilarity, i.e. 1 - Jaccard index). This would ensure that the maximum distances within each cell cluster resulted are no more than 0.95. In other words, the cells in each cluster are at least 5% similar by their Jaccard index given by Sourmash.
 
 > Supplementary figure needed
 >
 > Data source: https://github.com/celestialphineas/sc-notebooks/tree/master/data/mock-mash
 >
-> `dist.csv.gz` is the distance matrix of the cells’ raw reads in `.csv` format.
+> `dist.csv.gz` is the distance matrix of the cells’ raw reads in `.csv` format. `species.tsv` is a list of the cell id’s and their corresponding species. Note that when plotting the histogram for pairwise distances of the cells, the self-comparisons need crossing out. See below for a reference of an implementation,
 >
-> `species.tsv` is a list of the cell id’s and their corresponding species.
->
-> Note that when plotting the histogram for pairwise distances of the cells,
+> https://github.com/celestialphineas/sc-notebooks/blob/master/mock-mash.pdf
 
-### PComputing Mash signatures
+**The clustered cells were co-assembled for quality check and further comparing.** Co-assembly of multiple cells improves the information of corresponding species. The co-assembled contigs are used for signature computing, comparison and clustering in the next iteration. Though the paired-end information preserves, we treat the data single-end-wisely. The files will be merged together when assembly, resulting the assembly outperforms the result of paired-end-wise assembly slightly. We use SPAdes as the assembler with the single-cell mode (`–-sc`) on to reduce the impact of MDA, and the `--careful` option to run MismatchCorrector for post processing. Quality properties of the assemblies, especially completeness and contamination, are evaluated with CheckM.
 
-Mash signatures can be used as a feature for fast comparison between sequencing data files.
+> Is it legit to call a cell group and its co-assembly a “bin”?
 
-You'll have to compute the Mash signatures for every raw cell sequencing data. The 
+**The above steps are iterated until 10% of the genome assemblies have > 20% contamination.** The major motivation of the iterations is to reduce false negatives (clustering cells being the same species to the same group as far as possible). However, the clustering steps of the iterations are also involving false positives (cell groups containing more than one species). Empirically, a cell group whose co-assembly has > 20% contamination contains cells from more than one species. To allow the stage to stop, and for sake of reasonable portions of false errors, we keep the ratio for > 20% contaminated assemblies below 10%. For our instance, the process is iterated for 3 times before termination.
 
-```
-$ sbatch raw-sig-parallel.slurm
-```
+> Update the number of iterations if needed
 
-> Note: The following lines in this file need modification to adapt to your own environment configuration.
->
-> ```shell
-> module add c3ddb/miniconda/3.7
-> source activate sourmash
-> ```
+## Correcting errors of the iteration result
 
-
+Splitting the contaminated cell groups and merging the groups representing identical species would correct the false positive and false negative errors respectively. 
 
