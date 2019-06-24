@@ -87,11 +87,11 @@ Splitting the mixed cell groups and merging the groups representing identical sp
 
 **To split the mixed cell groups (i.e. false positives in former clustering), an abundance-based clustering is applied.** The heavily contaminated assemblies (> 20% contamination) correspond to cell groups containing cells of multiple species. We extract the contigs with lengths > 1k in the assemblies, and use the average sequencing depths (i.e. abundances) of the contigs as a feature to cluster the cells potentially from the same species together.
 
-Assume that the co-assembly of the cell group *g*, which consists of *n* cells, has *m* contigs with lengths > 1k. Let <i>d<sub>ij</sub></i> denote the average sequencing depth of contig *j* in cell *i*. Then for each cell *i* in group *g*, <i><b>d</b><sub>i</sub></i> = (<i>d<sub>i1</sub></i>, <i>d<sub>i2</sub></i>, …, <i>d<sub>im</sub></i>)<sup>T</sup> is a column vector describing the contig abundances into the cell's sequencing.
+Assume that the co-assembly of the cell group *g*, which consists of *n* cells, has *m* contigs with lengths > 1k. Let <i>d<sub>ij</sub></i> denote the average sequencing depth of contig *j* in cell *i*. Then for each cell *i* in group *g*, <i><b>d</b><sub>i</sub></i> = (<i>d<sub>i</sub>1</i>, <i>d<sub>i</sub>2</i>, …, <i>d<sub>im</sub></i>)<sup>T</sup> is a column vector describing the contig abundances into the cell's sequencing.
 
 Each of the mixed cell groups, has a matrix describing the abundances across contigs in cells.
 
-<center><i><b>D</b></i> = (<i><b>d</b></i><sub>1</sub> <i><b>d</b></i><sub>2</sub> ⋯ <i><b>d</b><sub>n</sub></i>) = (<i>d<sub>ij</sub></i>)<i><sub>m×n</sub></i></center>
+<div style="text-align:center"><i><b>D</b></i> = (<i><b>d</b></i><sub>1</sub> <i><b>d</b></i><sub>2</sub> ⋯ <i><b>d</b><sub>n</sub></i>) = (<i>d<sub>ij</sub></i>)<i><sub>m×n</sub></i></div>
 
 The normalization to produce the feature vectors of the cells is a combination of both the row normalization and the column normalization. The row normalization reduces the impact of contigs' contribution disparity to different cells. And the column normalization reduces the bias in the dissimilarity estimation of the cells, i.e. distances of the cells' contig abundance vectors. The normalization and distance computation are with respect to the 2-norm.
 
@@ -99,4 +99,5 @@ A hierarchical clustering is performed to the distance matrix of the normalized 
 
 > The justification of this 1.4 cut-off value refer to the following link:
 >
-> 
+> https://github.com/celestialphineas/sc-notebooks/blob/master/splitting-groups.pdf
+
