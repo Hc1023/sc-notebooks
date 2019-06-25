@@ -36,7 +36,7 @@ The single-cell sequencing data comes from 15 stool samples of the same donor, a
 | 34   | Stool 44-52    | 464         | NextSeq           |
 | 35   | Stool 44-224   | 820         | NextSeq           |
 
-A mock community consisting of 2,985 cells is used as baseline data for the methods’ justification and assessment. The mock community is made up of 4 species: *Bacillus subtilis*, *Escherichia coli*, Klebsiella pneumoniae, and *Staphylococcus aureus*. The data is acquired by Illumina NextSeq, resulting both single-end and paired-end reads.
+A mock community consisting of 2,985 cells is used as baseline data for the methods’ justification and assessment. The mock community is made up of 4 species: *Bacillus subtilis*, *Escherichia coli*, *Klebsiella pneumoniae*, and *Staphylococcus aureus*. The data is acquired by Illumina NextSeq, resulting both single-end and paired-end reads.
 
 ## Computational dependencies
 

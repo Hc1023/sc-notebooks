@@ -1,12 +1,4 @@
-# Genome recovery from single-cell sequencing data
-
-High-quality genome recovery is an important task in genomics applied to microbiomes. Such a task applied to metagenomics sequencing data, aka binning, is already widely practiced, while genome recovery from single-cell sequencing data remains under-developed.
-
-We here introduce an effective computational pipeline for recovering genomes from single-cell sequencing data in large scale, with detailed descriptions to the scripts we are using. The document serves as a readme/recipe to reproduce our method.
-
-The very fundamental idea of our pipeline is to co-assemble the cells that are likely to be the same species, and thus genomes of the species are supposed to be recovered. Each single-cell sequencing file reveals limited completeness of the cell’s information. Empirically, a high-quality genome assembly requires sequencing data of at least 20 cells of the same species.
-
-Our method can be roughly divided into three stages. a) Iterative comparing and aggregating, which tries to gather the cells of the same species to the same group. Each iteration is done by sequence comparisons of cells or groups of cells, with the help of Sourmash, an implementation of the MinHash similarity comparing algorithm. The cell or cell groups with similarities to an extent will be gathered using cluster analysis techniques. And later co-assembled to get draft genome assemblies for quality check. b) Splitting the contaminated cell groups and merging the groups representing identical species, which could fix the false positives and the false negatives respectively introduced in former stage. c) Final co-assembly and clean up, which finalize the whole process returning the genomes we recovered from the input sequencing data.
+# Script usage manual
 
 > Data and intermediate files are located at `/scratch/users/yehang/nsc-full`. The description below uses relative paths to this directory.
 
@@ -23,6 +15,10 @@ where the paired-end reads end with `1.fastq` or `2.fastq`, and the file for sin
 Though the paired-end information preserves, we treat the data single-end-wisely. The files will be merged together when we compute the mash distances and assemble the reads. By doing this, the assembly outperforms the result of paired-end-wise assembly slightly.
 
 Currently we have sequencing data of 21,914 single cells from multiple samples of the same donor, and thus there are 21,914 × 3 = 65,742​ `.fastq` files in directory `raw`.
+
+## Structure of the working directory
+
+The input sequencing data of the single cells is located in the directory `raw`. The `.sh` and `.slurm` scripts stored directly inside the working directory are major scripts for submitting computational jobs. Scripts with filenames starting with `1` handles the first round of signature computation, pre-division and dendrogram splitting. And scripts with filenames starting with `n` are used for tasks in later iterations. The `util` directory contains utility scripts for some common tasks. The directory `output` is used for . New directories are created when needed.
 
 ## Dependencies
 
@@ -42,16 +38,39 @@ You need to look into the scripts and modify the corresponding lines accordingly
 
 ## Iterative comparing and aggregating
 
-### Computing signatures
+### 1-1. Signature computing of all cells
 
-The sequence comparing tool, Sourmash, is based on MinHash algorithm, which is originally used for comparing the similarity of two sets. The feature vectors extracted from the sequences, i.e. signatures, are then used for computing the similarity of query sequences. The computation of signatures and evaluation of the similarities of the signatures are faster than alignment-based comparison by orders of magnitude. 
+The sequence comparing tool, Sourmash, is based on MinHash algorithm, which is originally used for comparing the similarity of two sets. The feature vectors extracted from the sequences, i.e. signatures, are then used for computing the similarities of the query sequences. 
 
-### Pre-division
-
-The motivation of the pre-division is to make mash comparison feasible for large number of cells. Sourmash’s mash distance comparison requires intensive RAM usage, making 20k signatures impossible to compare all at once. Intentionally 
+The following line submits a job for computing the signatures for all cells in the directory `raw`. The signatures will then be written to the `raw-signatures` directory in the working directory with the `.json` file extensions.
 
 ```
-$ bash dividing.sh
+$ sbatch 1-raw-sig.slurm
+```
+
+To make the script work for your case, you may need to modify the lines for the environment configuration. This also applies to scripts in the following steps.
+
+```shell
+module add c3ddb/miniconda/3.7
+source activate sourmash
+```
+
+The job requires 32 CPUs available on the cluster, and runs 32 `sourmash compute` jobs in parallel. You can modify the script to change the number of minimum CPUs, number of nodes and the number of jobs in parallel.
+
+The Sourmash command line for signature computing is,
+
+```
+sourmash compute --track-abundance --merge raw/${CELL_NO}_*.fastq --output "$OUT_DIR/$CELL_NO.json"
+```
+
+The `--track-abundance` option would preserve the abundance information of the *k*-mers. And the `--merge` option would take the paired-end and single-end sequencing files as a whole. The default *k*-mer sizes of Sourmash are 21, 31 and 51.
+
+### 1-2. Pre-division
+
+The motivation of the pre-division is to make mash comparison feasible for large number of cells. Sourmash’s mash distance comparison requires intensive RAM usage, making 20k signatures impossible to compare all at once. Our pre-division simply divides the cells by lexicographical order with a maximum division size of 4,000. 
+
+```
+$ bash 1-dividing.sh
 ```
 
 The command line above will generate lists of cell numbers and write the files containing lists of cells to the directory `divisions`. The default division size is 4000. This can be modified in the script,
@@ -70,22 +89,87 @@ Output files of the script have the extension `.tsv`. Within each file, every si
 ...
 ```
 
-### Computing Mash signatures
+### 1-3. Comparing signatures
 
-Mash signatures can be used as a feature for fast comparison between sequencing data files.
-
-You'll have to compute the Mash signatures for every raw cell sequencing data. The 
+We then make pairwise comparisons of the signatures.
 
 ```
-$ sbatch raw-sig-parallel.slurm
+$ bash 1-compare-batch.sh
 ```
 
-> Note: The following lines in this file need modification to adapt to your own environment configuration.
->
-> ```shell
-> module add c3ddb/miniconda/3.7
-> source activate sourmash
-> ```
+This script will submit several Sourmash comparison jobs to Slurm, each one requires 16 CPUs and 80 GB RAM.
 
+The distance matrices computed will be written to the directory `it1/dist`. The files written to the directory includes (the i’s below are division numbers), `i.npy` which is a NumPy array dump containing the distance matrix, `i.npy.labels.txt` which is a list of filenames for the compared sequences, and `i.csv` containing the matrix in CSV format. 
 
+### 1-4. Splitting dendrogram
 
+The distance matrices are then used for hierarchical clustering. The clustering requires certain criterion for splitting the dendrogram and flatten the subtrees to lists as the clusters. 
+
+```
+$ bash 1-split-batch.sh
+```
+
+The script submits Slurm jobs to split all the distance matrices resulting by the former step. The script depends on the utility Python script `util/split.py` to work. The jobs will write the groups as lists to individual TSV files located in `it1/groups` and create a soft link `it1/cell-groups` referring to `it1/groups`.
+
+Looking into `util/split.py`, you will notice that the clustering is computed with the following line of Python code,
+
+```python
+assignments = fcluster(linkage(square_form, method = 'complete'), 0.95, criterion = 'distance')
+```
+
+This means that we are using the complete linkage method with 0.95 distance criterion for splitting the dendrogram to clusters. This ensures that the similarities within each cluster will be at least 5% by Sourmash’s Jaccard index.
+
+### n-1. Co-assemble the single cells in each cluster
+
+The cell groups are co-assembled and the contigs are used for later steps. The script requires two parameters, the first of which is the directory name for the current iteration, and the second is the group name prefix. The script will submit a job to co-assemble the cell groups with the specified group names prefix serially.
+
+```
+$ bash n-assembly.sh <ITERATED DIR> <GROUP PREFIX>
+```
+
+Below is an example for submitting co-assembly jobs for the first iteration. 64 Slurm jobs will be submitted, each of them requires 80 GB RAM and 16 CPUs.
+
+```
+$ bash n-assembly.sh it1 0-1
+Submitted batch job xxxxxxx
+$ bash n-assembly.sh it1 0-2
+Submitted batch job xxxxxxx
+...
+$ bash n-assembly.sh it1 0-9
+Submitted batch job xxxxxxx
+$ bash n-assembly.sh it1 1-1
+Submitted batch job xxxxxxx
+...
+$ bash n-assembly.sh it1 5-9
+Submitted batch job xxxxxxx
+```
+
+There is also a script submit the co-assembly jobs in batches. Be careful when submitting jobs using this script.
+
+```
+$ bash n-assembly-batch.sh it1 0-1
+```
+
+The command above will submit huge amount of Slurm jobs in parallel, each of which handles only one co-assembly of a cell group with the filename prefix `0-1`.
+
+The sequencing data of the cells within each group are then concatenated together and co-assembled single-end-wisely. The utility shell script for the assembly is `util/assembly.sh` using the command line
+
+```shell
+spades.py --careful --sc -s ${OUT_DIR}/${BASENAME}.fastq -o ${OUT_DIR}/${BASENAME}
+```
+
+The `--sc` (single-cell) option reduces the impact of MDA, and the `--careful` option turns on the MismatchCorrector for post processing.
+
+### n-2. Quality assessment with CheckM
+
+CheckM is used for quality assessment of the assemblies, especially the completeness and the contamination of the draft genome assemblies. This step does require the following steps to halt. 
+
+The assemblies are also divided for running CheckM, the default devision size is 1,000, and this can be modified in the script `n-checkm.sh`.
+
+```
+$ bash n-checkm.sh <ITERATED DIR>
+```
+
+### n-3. Computing signatures of the assemblies
+
+The signatures
