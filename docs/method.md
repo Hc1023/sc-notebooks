@@ -10,7 +10,7 @@ We proposed a new data analysis pipeline and applied it to 21,914 single-cells�
 
 The very fundamental idea of our computational pipeline is to co-assemble the sequencing data of the cells that are likely to be the same species, and thus genomes of the species are supposed to be recovered. The co-assembly is necessary, since each single-cell sequencing file reveals limited completeness of the cell’s information. Empirically, a high-quality genome assembly requires sequencing data of at least 20 cells from the same species.
 
-Our method can be roughly divided into three stages. a) Iterative comparing and aggregating, which tries to gather the cells of the same species to the same group. Each iteration is done by sequence comparisons of cells or groups of cells, with the help of Sourmash, an implementation of the MinHash similarity comparing algorithm. The cell or cell groups with similarities to an extent will be gathered using cluster analysis techniques. And later co-assembled to get draft genome assemblies for quality check. b) Splitting the contaminated cell groups and merging the groups representing identical species, which could fix the false positives and the false negatives respectively introduced in former stage. c) Final co-assembly and clean up, which finalize the whole process returning the genomes we recovered from the input sequencing data.
+Our method can be roughly divided into three stages. a) Iterative comparing and aggregating, which tries to gather the cells of the same species to the same group. Each iteration is done by sequence comparisons of cells or groups of cells, with the help of Sourmash, an implementation of the MinHash similarity comparing algorithm. The cell or cell groups with similarities to an extent will be gathered using cluster analysis techniques. And later co-assembled to get draft genome assemblies for quality check. b) Splitting the mixed cell groups and merging the groups representing identical species, which could fix the false positives and the false negatives respectively introduced in former stage. c) Final co-assembly and clean up, which finalize the whole process returning the genomes we recovered from the input sequencing data.
 
 ## Sequencing data of 22k single cells was used for recovering genomes
 
@@ -85,9 +85,9 @@ The very first iterative stage gather the cells that are potentially from the sa
 
 Splitting the mixed cell groups and merging the groups representing identical species would correct the false positive and false negative errors respectively. 
 
-**To split the mixed cell groups (i.e. false positives in former clustering), an abundance-based clustering is applied.** The heavily contaminated assemblies (> 20% contamination) correspond to cell groups containing cells of multiple species. We extract the contigs with lengths > 1k in the assemblies, and use the average sequencing depths (i.e. abundances) of the contigs as a feature to cluster the cells potentially from the same species together.
+**To split the mixed cell groups (i.e. false positives in former clustering), an abundance-based clustering is applied.** The heavily contaminated assemblies (> 20% contamination) correspond to cell groups containing cells of multiple species. We extract the contigs with lengths > 1kbp in the assemblies, and use the average sequencing depths (i.e. abundances) of the contigs as a feature to cluster the cells potentially from the same species together.
 
-Assume that the co-assembly of the cell group *g*, which consists of *n* cells, has *m* contigs with lengths > 1k. Let <i>d<sub>ij</sub></i> denote the average sequencing depth of contig *j* in cell *i*. Then for each cell *i* in group *g*, <i><b>d</b><sub>i</sub></i> = (<i>d</i><sub><i>i</i>1</sub>, <i>d</i><sub><i>i</i>2</sub>, …, <i>d<sub>im</sub></i>)<sup>T</sup> is a column vector describing the contig abundances into the cell's sequencing.
+Assume that the co-assembly of the cell group *g*, which consists of *n* cells, has *m* contigs with lengths > 1kbp. Let <i>d<sub>ij</sub></i> denote the average sequencing depth of contig *j* in cell *i*. Then for each cell *i* in group *g*, <i><b>d</b><sub>i</sub></i> = (<i>d</i><sub><i>i</i>1</sub>, <i>d</i><sub><i>i</i>2</sub>, …, <i>d<sub>im</sub></i>)<sup>T</sup> is a column vector describing the contig abundances into the cell's sequencing.
 
 Each of the mixed cell groups, has a matrix describing the abundances across contigs in cells.
 
@@ -95,9 +95,9 @@ Each of the mixed cell groups, has a matrix describing the abundances across con
 
 The normalization to produce the feature vectors of the cells is a combination of both the row normalization and the column normalization. The row normalization reduces the impact of contigs' contribution disparity to different cells. And the column normalization reduces the bias in the dissimilarity estimation of the cells, i.e. distances of the cells' contig abundance vectors. The normalization and distance computation are with respect to the 2-norm.
 
-A hierarchical clustering is performed to the distance matrix of the normalized data, using complete linkage method with a 1.4 cut-off value for splitting the dendrogram, which is chosen by looking into our previous results split using human effort with the help of elbow method and plotting the distance matrix.
+A hierarchical clustering is performed to the distance matrix of the normalized data, using complete linkage method with a 1.4 cutoff value for splitting the dendrogram, which is chosen by looking into our previous results split using human effort with the help of elbow method and plotting the distance matrix.
 
-> The justification of this 1.4 cut-off value refer to the following link:
+> The justification of this 1.4 cutoff value refer to the following link:
 >
 > https://github.com/celestialphineas/sc-notebooks/blob/master/splitting-groups.pdf
 
