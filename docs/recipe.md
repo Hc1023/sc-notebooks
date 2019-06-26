@@ -16,7 +16,7 @@ Though the paired-end information preserves, we treat the data single-end-wisely
 
 Currently we have sequencing data of 21,914 single cells from multiple samples of the same donor, and thus there are 21,914 × 3 = 65,742​ `.fastq` files in directory `raw`.
 
-## Structure of the working directory
+## Hierarchy of the working directory
 
 The input sequencing data of the single cells is located in the directory `raw`. The `.sh` and `.slurm` scripts stored directly inside the working directory are major scripts for submitting computational jobs. Scripts with filenames starting with `1` handles the first round of signature computation, pre-division and dendrogram splitting. And scripts with filenames starting with `n` are used for tasks in later iterations. The `util` directory contains utility scripts for some common tasks. The directory `output` is used for . New directories are created when needed.
 
@@ -109,7 +109,7 @@ The distance matrices are then used for hierarchical clustering. The clustering 
 $ bash 1-split-batch.sh
 ```
 
-The script submits Slurm jobs to split all the distance matrices resulting by the former step. The script depends on the utility Python script `util/split.py` to work. The jobs will write the groups as lists to individual TSV files located in `it1/groups` and create a soft link `it1/cell-groups` referring to `it1/groups`.
+The script submits Slurm jobs to split all the distance matrices resulting by the former step. The script depends on the utility Python script `util/split.py` to work. The jobs will write the groups as lists to individual TSV files located in `it1/groups` and create a soft link `it1/cell-groups` referring to `it1/groups` for compatibility with later steps.
 
 Looking into `util/split.py`, you will notice that the clustering is computed with the following line of Python code,
 
@@ -172,4 +172,39 @@ $ bash n-checkm.sh <ITERATED DIR>
 
 ### n-3. Computing signatures of the assemblies
 
-The signatures
+The signatures of the assemblies are computed for later comparison. The reason for using independent scripts for the three steps n-3 to n-5 in further iteration is for ease of the directory hierarchy.
+
+```
+$ bash n-contig-sig.sh <ITERATED DIR>
+```
+
+### n-4. Comparison of the assembly signatures
+
+The comparison of the signatures from the assemblies makes no differences from the comparison of the signatures from raw sequencing data.
+
+The comparison bootstrap script requires two arguments. The first argument specify the source iteration directory, for which the signatures are already computed. The second argument specify the target directory for storing the comparison result, in which the next iteration will start.
+
+```
+$ bash n-compare-batch.sh <SOURCE DIR> <TARGET DIR>
+```
+
+An example is (starting the second iteration),
+
+```
+$ bash n-compare-batch.sh it1 it2
+```
+
+### n-5. Splitting the comparison result
+
+The script for splitting dendrograms in the iteration steps is different from the splitting script for the first round, and will output the clustering results to two directories, `groups` containing lists of cell groups in the former iteration, and `cell-groups` containing lists of corresponding cells.
+
+```
+$ bash n-split-batch.sh <SOURCE DIR> <TARGET DIR>
+```
+
+### Iterating
+
+The steps above are repeated until CheckM (n-3) reports that more than 10% of the assemblies have more than 20% contamination. The resulting cell groups and the corresponding assemblies are later used for error correction and cleaning-up.
+
+## Correcting errors of the iteration result
+

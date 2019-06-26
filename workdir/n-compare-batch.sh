@@ -16,7 +16,8 @@ mkdir -p ${OUT_DIR}
 echo 'Creating temp cell indices...'
 
 i=0
-IN_SIGS=$(cd $IN_DIR && ls *.json)
+# A list of the input signatures and sorted by random
+IN_SIGS=$(cd $IN_DIR && ls *.json | sort -R)
 # Devide the source groups
 for SIG_FILE in $IN_SIGS; do
     SIG_NO=${SIG_FILE//.json}
