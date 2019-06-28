@@ -16,9 +16,11 @@ Though the paired-end information preserves, we treat the data single-end-wisely
 
 Currently we have sequencing data of 21,914 single cells from multiple samples of the same donor, and thus there are 21,914 × 3 = 65,742​ `.fastq` files in directory `raw`.
 
+> Note: The `CELL NAME` should not contain underscores, spaces and hyphens!
+
 ## Hierarchy of the working directory
 
-The input sequencing data of the single cells is located in the directory `raw`. The `.sh` and `.slurm` scripts stored directly inside the working directory are major scripts for submitting computational jobs. Scripts with filenames starting with `1` handles the first round of signature computation, pre-division and dendrogram splitting. And scripts with filenames starting with `n` are used for tasks in later iterations. The `util` directory contains utility scripts for some common tasks. The directory `output` is used for . New directories are created when needed.
+The input sequencing data of the single cells is located in the directory `raw`. The `.sh` and `.slurm` scripts stored directly inside the working directory are major scripts for submitting computational jobs. Scripts with filenames starting with `1` handles the first round of signature computation, pre-division and dendrogram splitting. Scripts with filenames starting with `n` are used for tasks in later iterations. And filenames starting with `c` do correction jobs for the cell groups. The `util` directory contains utility scripts for some common tasks. The directory `output` is used for . New directories are created when needed.
 
 ## Dependencies
 
@@ -207,4 +209,14 @@ $ bash n-split-batch.sh <SOURCE DIR> <TARGET DIR>
 The steps above are repeated until CheckM (n-3) reports that more than 10% of the assemblies have more than 20% contamination. The resulting cell groups and the corresponding assemblies are later used for error correction and cleaning-up.
 
 ## Correcting errors of the iteration result
+
+After running CheckM to evaluate the completeness and contamination of the assemblies. The cell groups whose co-assemblies have > 20% contamination are chosen for separating to reduce the false positive errors. Then, the cells in the groups are co-assembled again. The cell groups with > 95% ANI will be merged to reduce the false negative errors.
+
+### Separating mixed cell groups
+
+```
+$ bash c-separating.sh <BASE NAME> <OUTPUT DIR>
+```
+
+Please ensure that the assembly is located at `<BASE NAME>.fasta` and the corresponding list of cells is at `<BASE NAME>.tsv`. Separated cell groups will be written to `<OUTPUT DIR>` as TSV cell lists.
 

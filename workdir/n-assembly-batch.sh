@@ -11,7 +11,7 @@ read -r -d '' SLURM_TEMPLATE << EOS
 #SBATCH -o output/assembly-$1-$2-masterout.txt
 #SBATCH -e output/assembly-$1-$2-mastererr.txt
 #SBATCH --mincpus=8
-#SBATCH --mem=80000
+#SBATCH --mem=16000
 
 bash util/assembly.sh $1/cell-groups/GROUPNAME.tsv GROUPNAME $1/contigs
 EOS

@@ -83,9 +83,9 @@ The very first iterative stage gather the cells that are potentially from the sa
 
 ## Correcting errors of the iteration result
 
-Splitting the mixed cell groups and merging the groups representing identical species would correct the false positive and false negative errors respectively. 
+Separating the mixed cell groups and merging the groups representing identical species would correct the false positive and false negative errors respectively. 
 
-**To split the mixed cell groups (i.e. false positives in former clustering), an abundance-based clustering is applied.** The heavily contaminated assemblies (> 20% contamination) correspond to cell groups containing cells of multiple species. We extract the contigs with lengths > 1kbp in the assemblies, and use the average sequencing depths (i.e. abundances) of the contigs as a feature to cluster the cells potentially from the same species together.
+**To separate the mixed cell groups (i.e. false positives in former clustering), an abundance-based clustering is applied.** The heavily contaminated assemblies (> 20% contamination) correspond to cell groups containing cells of multiple species. We extract the contigs with lengths > 1kbp in the assemblies, and use the average sequencing depths (i.e. abundances) of the contigs as a feature to cluster the cells potentially from the same species together.
 
 Assume that the co-assembly of the cell group *g*, which consists of *n* cells, has *m* contigs with lengths > 1kbp. Let <i>d<sub>ij</sub></i> denote the average sequencing depth of contig *j* in cell *i*. Then for each cell *i* in group *g*, <i><b>d</b><sub>i</sub></i> = (<i>d</i><sub><i>i</i>1</sub>, <i>d</i><sub><i>i</i>2</sub>, …, <i>d<sub>im</sub></i>)<sup>T</sup> is a column vector describing the contig abundances into the cell's sequencing.
 

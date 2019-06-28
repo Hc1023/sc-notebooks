@@ -11,6 +11,7 @@
 OUT_DIR='raw-signatures'
 mkdir -p $OUT_DIR
 
+# Environment configuration
 module add c3ddb/miniconda/3.7
 source activate sourmash
 
